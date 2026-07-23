@@ -1,8 +1,11 @@
 # OpenID Connect (OIDC) Provider for Keyless GitHub Actions Authentication
 resource "aws_iam_openid_connect_provider" "github" {
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com", "https://github.com/TahyrHussayn"]
+  thumbprint_list = [
+    "6938fd4d98bab03faadb97b34396831e3780aea1",
+    "1c58a21d286dd77ed79d9af1380db314294d29f7"
+  ]
 }
 
 # IAM Role assumed dynamically by GitHub Actions without static AWS keys
@@ -24,11 +27,7 @@ resource "aws_iam_role" "github_actions" {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = [
-              "repo:${var.github_repo}:*",
-              "repo:TahyrHussayn/absolute:*",
-              "repo:tahyrhussayn/absolute:*"
-            ]
+            "token.actions.githubusercontent.com:sub" = "repo:*absolute:*"
           }
         }
       }

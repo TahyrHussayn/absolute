@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 env:
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: "true"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   # -------------------------------------------------------------
@@ -20,7 +20,7 @@ jobs:
   # -------------------------------------------------------------
   test:
     name: 🧪 Build & Test (Phoenix)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     services:
       postgres:
@@ -79,7 +79,7 @@ jobs:
   # -------------------------------------------------------------
   docker:
     name: 🐳 Validate Dockerfile Build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Build Docker image
@@ -90,7 +90,7 @@ jobs:
   # -------------------------------------------------------------
   terraform:
     name: 🏗️ Validate Infrastructure Code
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -109,7 +109,7 @@ jobs:
   deploy:
     name: 🚀 Deploy to AWS Cluster (OIDC Keyless)
     needs: [test, docker, terraform] # BLOCK DEPLOYMENT if any test/check fails!
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
