@@ -11,13 +11,16 @@ permissions:
   id-token: write # Required for requesting temporary OIDC JWT tokens from GitHub
   contents: read
 
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: "true"
+
 jobs:
   # -------------------------------------------------------------
   # Job 1: Build & Test (Elixir / Phoenix)
   # -------------------------------------------------------------
   test:
     name: 🧪 Build & Test (Phoenix)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     services:
       postgres:
@@ -76,7 +79,7 @@ jobs:
   # -------------------------------------------------------------
   docker:
     name: 🐳 Validate Dockerfile Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: Build Docker image
@@ -87,7 +90,7 @@ jobs:
   # -------------------------------------------------------------
   terraform:
     name: 🏗️ Validate Infrastructure Code
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -106,7 +109,7 @@ jobs:
   deploy:
     name: 🚀 Deploy to AWS Cluster (OIDC Keyless)
     needs: [test, docker, terraform] # BLOCK DEPLOYMENT if any test/check fails!
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
