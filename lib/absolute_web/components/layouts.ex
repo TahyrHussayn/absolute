@@ -51,6 +51,11 @@ defmodule AbsoluteWeb.Layouts do
             </.link>
           </li>
           <li>
+            <.link navigate={~p"/cluster"} class="btn btn-ghost btn-sm font-semibold">
+              <.icon name="hero-globe-alt" class="size-4 text-accent" /> Cluster Mesh
+            </.link>
+          </li>
+          <li>
             <.link href={~p"/aws-guide"} class="btn btn-ghost btn-sm font-semibold">
               <.icon name="hero-cloud" class="size-4 text-secondary" /> AWS Guide
             </.link>

@@ -4,7 +4,7 @@ defmodule AbsoluteWeb.PlaygroundLiveTest do
 
   test "renders playground page with title and initial stats", %{conn: conn} do
     {:ok, view, html} = live(conn, ~p"/playground")
-    assert html =~ "Interactive BEAM Playground"
+    assert html =~ "Complete BEAM Feature Playground"
     assert has_element?(view, "#counter-value")
   end
 
@@ -33,5 +33,17 @@ defmodule AbsoluteWeb.PlaygroundLiveTest do
 
     html = view |> element("#crash-worker-btn") |> render_click()
     assert html =~ "Total Restarts"
+  end
+
+  test "interacts with ETS leaderboard and Agent", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/playground")
+
+    # Agent increment
+    view |> element("button[phx-click='inc_agent'][phx-value-color='red']") |> render_click()
+    assert render(view) =~ "RED"
+
+    # Stream fibonacci
+    view |> element("button[phx-click='run_fib_stream'][phx-value-count='10']") |> render_click()
+    assert render(view) =~ "Computed 10 numbers"
   end
 end

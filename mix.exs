@@ -95,7 +95,9 @@ defmodule Absolute.MixProject do
         "esbuild absolute --minify",
         "phx.digest"
       ],
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"],
+      bootstrap: ["cmd ./scripts/bootstrap.sh"],
+      destroy: ["cmd ./scripts/destroy.sh"]
     ]
   end
 end

@@ -14,6 +14,11 @@ defmodule Absolute.Application do
       {Phoenix.PubSub, name: Absolute.PubSub},
       {Absolute.Counter, 0},
       Absolute.CrashWorker,
+      {Registry, keys: :unique, name: Absolute.SessionRegistry},
+      {DynamicSupervisor, name: Absolute.SessionSupervisor, strategy: :one_for_one},
+      Absolute.EtsLeaderboard,
+      Absolute.TickerAgent,
+      AbsoluteWeb.Presence,
       # Start to serve requests, typically the last entry
       AbsoluteWeb.Endpoint
     ]

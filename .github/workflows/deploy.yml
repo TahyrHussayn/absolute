@@ -1,0 +1,134 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  id-token: write # Required for requesting temporary OIDC JWT tokens from GitHub
+  contents: read
+
+jobs:
+  # -------------------------------------------------------------
+  # Job 1: Build & Test (Elixir / Phoenix)
+  # -------------------------------------------------------------
+  test:
+    name: 🧪 Build & Test (Phoenix)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: absolute_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      MIX_ENV: test
+      DATABASE_URL: ecto://postgres:postgres@localhost:5432/absolute_test
+      SECRET_KEY_BASE: fe4977464010323315757a3e30129202518e1d2c67c5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup BEAM (Elixir / OTP)
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.17'
+          otp-version: '27'
+
+      - name: Restore dependency cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Check code formatting
+        run: mix format --check-formatted
+
+      - name: Compile with warnings-as-errors
+        run: mix compile --warnings-as-errors
+
+      - name: Run ExUnit test suite
+        run: mix test
+
+  # -------------------------------------------------------------
+  # Job 2: Validate Production Docker Container
+  # -------------------------------------------------------------
+  docker:
+    name: 🐳 Validate Dockerfile Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t absolute:latest .
+
+  # -------------------------------------------------------------
+  # Job 3: Validate Terraform Infrastructure Code
+  # -------------------------------------------------------------
+  terraform:
+    name: 🏗️ Validate Infrastructure Code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+      - name: Check Terraform formatting
+        run: terraform fmt -check infra/
+      - name: Initialize Terraform
+        run: terraform -chdir=infra init -backend=false
+      - name: Validate Terraform configuration
+        run: terraform -chdir=infra validate
+
+  # -------------------------------------------------------------
+  # Job 4: Deploy to AWS via Keyless OIDC (Only on main branch)
+  # -------------------------------------------------------------
+  deploy:
+    name: 🚀 Deploy to AWS Cluster (OIDC Keyless)
+    needs: [test, docker, terraform] # BLOCK DEPLOYMENT if any test/check fails!
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC Keyless Auth
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID || '173322644048' }}:role/absolute-github-actions-production
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Initialize Terraform
+        run: terraform -chdir=infra init
+
+      - name: Apply Infrastructure & Provision BEAM Cluster
+        run: terraform -chdir=infra apply -auto-approve
+
+      - name: Deployment Completed
+        run: echo "🎉 Successfully deployed Absolute BEAM Cluster via Keyless OIDC Authentication!"
