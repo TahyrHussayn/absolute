@@ -184,6 +184,12 @@ resource "aws_instance" "beam_nodes" {
     aws_region  = var.aws_region
   })
 
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required" # Enforce IMDSv2 (Zero SSRF credential leaks)
+    http_put_response_hop_limit = 2
+  }
+
   tags = {
     Name        = "absolute-beam-node-${count.index + 1}"
     Environment = var.environment
