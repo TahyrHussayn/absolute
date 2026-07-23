@@ -1,0 +1,103 @@
+<Layouts.app flash={@flash}>
+  <div class="py-10 space-y-12">
+    <!-- Hero Section -->
+    <div class="text-center space-y-6 max-w-3xl mx-auto">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider">
+        <.icon name="hero-sparkles" class="size-4" /> Phoenix 1.8 & Erlang/OTP
+      </div>
+      <h1 class="text-4xl font-extrabold tracking-tight sm:text-6xl text-balance">
+        Experience the Pure Magic of the <span class="text-primary">BEAM</span>
+      </h1>
+      <p class="text-lg text-base-content/70 leading-relaxed max-w-2xl mx-auto">
+        Built with Elixir, Phoenix LiveView, and Ecto. Explore real-time concurrency, fault tolerance, live PubSub streaming, and production-ready AWS deployment.
+      </p>
+      <div class="flex flex-wrap items-center justify-center gap-4 pt-2">
+        <.link navigate={~p"/playground"} class="btn btn-primary btn-lg shadow-md hover:shadow-lg">
+          <.icon name="hero-bolt" class="size-5" /> Launch BEAM Playground
+        </.link>
+        <.link href={~p"/aws-guide"} class="btn btn-outline btn-lg">
+          <.icon name="hero-cloud" class="size-5" /> AWS Deployment Guide
+        </.link>
+      </div>
+    </div>
+
+    <!-- Feature Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+      <div class="card bg-base-200 border border-base-300 shadow-sm hover:shadow-md transition-all">
+        <div class="card-body">
+          <div class="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-2">
+            <.icon name="hero-bolt" class="size-6" />
+          </div>
+          <h2 class="card-title text-lg">Sub-Millisecond Concurrency</h2>
+          <p class="text-sm text-base-content/70">
+            Spawn hundreds of thousands of lightweight processes concurrently on a single CPU core without performance degradation.
+          </p>
+          <div class="card-actions justify-end mt-4">
+            <.link
+              navigate={~p"/playground"}
+              class="text-xs font-bold text-primary flex items-center gap-1 hover:underline"
+            >
+              Try Process Spawner &rarr;
+            </.link>
+          </div>
+        </div>
+      </div>
+
+      <div class="card bg-base-200 border border-base-300 shadow-sm hover:shadow-md transition-all">
+        <div class="card-body">
+          <div class="size-10 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center mb-2">
+            <.icon name="hero-shield-check" class="size-6" />
+          </div>
+          <h2 class="card-title text-lg">Self-Healing OTP</h2>
+          <p class="text-sm text-base-content/70">
+            "Let It Crash" philosophy. Supervisors isolate failures and restart crashed components instantly without user disruption.
+          </p>
+          <div class="card-actions justify-end mt-4">
+            <.link
+              navigate={~p"/playground"}
+              class="text-xs font-bold text-secondary flex items-center gap-1 hover:underline"
+            >
+              Test Crash Supervisor &rarr;
+            </.link>
+          </div>
+        </div>
+      </div>
+
+      <div class="card bg-base-200 border border-base-300 shadow-sm hover:shadow-md transition-all">
+        <div class="card-body">
+          <div class="size-10 rounded-lg bg-accent/10 text-accent flex items-center justify-center mb-2">
+            <.icon name="hero-arrow-path-rounded-square" class="size-6" />
+          </div>
+          <h2 class="card-title text-lg">Real-Time PubSub & LiveView</h2>
+          <p class="text-sm text-base-content/70">
+            Server-rendered HTML over WebSockets. Broadcast state live to thousands of concurrent users with zero custom JS code.
+          </p>
+          <div class="card-actions justify-end mt-4">
+            <.link
+              navigate={~p"/playground"}
+              class="text-xs font-bold text-accent flex items-center gap-1 hover:underline"
+            >
+              Test Multi-Tab Sync &rarr;
+            </.link>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Production Ready Banner -->
+    <div class="card bg-gradient-to-r from-base-300 to-base-200 border border-base-300">
+      <div class="card-body flex flex-col md:flex-row items-center justify-between gap-6">
+        <div>
+          <span class="badge badge-success mb-2">Production Ready</span>
+          <h3 class="text-xl font-bold">Deploy to AWS EC2 with Docker Compose</h3>
+          <p class="text-sm text-base-content/70 mt-1">
+            Includes multi-stage Dockerfile, production compose config, and step-by-step setup for AWS 12-month free tier.
+          </p>
+        </div>
+        <.link href={~p"/aws-guide"} class="btn btn-secondary shrink-0">
+          View Deployment Guide &rarr;
+        </.link>
+      </div>
+    </div>
+  </div>
+</Layouts.app>

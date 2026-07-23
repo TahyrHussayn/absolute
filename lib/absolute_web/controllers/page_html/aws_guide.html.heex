@@ -1,0 +1,116 @@
+<Layouts.app flash={@flash}>
+  <div class="space-y-8 py-4">
+    <div class="border-b border-base-300 pb-6">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/10 text-secondary text-xs font-semibold uppercase tracking-wider mb-2">
+        <.icon name="hero-cloud" class="size-4" /> Production Deployment
+      </div>
+      <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">
+        AWS EC2 Deployment Guide
+      </h1>
+      <p class="mt-2 text-base text-base-content/70">
+        Step-by-step instructions to deploy Absolute on AWS EC2 using Docker Compose (~$0/mo free tier, ~$8/mo after).
+      </p>
+    </div>
+
+    <!-- Step 1 -->
+    <div class="card bg-base-200 border border-base-300 shadow-sm">
+      <div class="card-body">
+        <h2 class="card-title text-lg flex items-center gap-2 text-primary">
+          <span class="badge badge-primary font-bold">Step 1</span> Launch AWS EC2 Instance
+        </h2>
+        <ol class="list-decimal list-inside space-y-2 text-sm text-base-content/80 mt-2">
+          <li>
+            Open <strong>AWS Management Console</strong> and navigate to <strong>EC2</strong>.
+          </li>
+          <li>Click <strong>Launch Instance</strong>.</li>
+          <li>
+            Set instance name:
+            <code class="bg-base-300 px-2 py-0.5 rounded">absolute-production</code>
+          </li>
+          <li>Select <strong>Ubuntu Server 24.04 LTS</strong> AMI.</li>
+          <li>
+            Choose instance type: <code class="bg-base-300 px-2 py-0.5 rounded">t3.micro</code>
+            (Free tier eligible).
+          </li>
+          <li>
+            In <strong>Network Settings</strong>, enable HTTP (80), HTTPS (443), and SSH (22).
+          </li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="card bg-base-200 border border-base-300 shadow-sm">
+      <div class="card-body">
+        <h2 class="card-title text-lg flex items-center gap-2 text-secondary">
+          <span class="badge badge-secondary font-bold">Step 2</span> SSH & Install Docker
+        </h2>
+        <p class="text-sm text-base-content/70">
+          Connect via SSH and install Docker + Compose on Ubuntu:
+        </p>
+
+        <div class="bg-neutral text-neutral-content p-4 rounded-box overflow-x-auto text-xs font-mono my-2">
+          <pre phx-no-curly-interpolation>ssh -i /path/to/your-key.pem ubuntu@&lt;YOUR-EC2-PUBLIC-IP&gt;
+
+# Install Docker
+sudo apt-get update && sudo apt-get install -y docker.io docker-compose-v2 git
+sudo usermod -aG docker $USER
+newgrp docker</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="card bg-base-200 border border-base-300 shadow-sm">
+      <div class="card-body">
+        <h2 class="card-title text-lg flex items-center gap-2 text-accent">
+          <span class="badge badge-accent font-bold">Step 3</span> Deploy with Docker Compose
+        </h2>
+        <p class="text-sm text-base-content/70">
+          Clone repository, configure environment, and spin up containers:
+        </p>
+
+        <div class="bg-neutral text-neutral-content p-4 rounded-box overflow-x-auto text-xs font-mono my-2">
+          <pre phx-no-curly-interpolation>git clone https://github.com/YOUR_USERNAME/absolute.git
+cd absolute
+
+# Create production environment
+cat &lt;&lt; 'EOF' &gt; .env
+SECRET_KEY_BASE=$(openssl rand -base64 48)
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=$(openssl rand -hex 16)
+POSTGRES_DB=absolute_prod
+DATABASE_URL=ecto://postgres:${POSTGRES_PASSWORD}@postgres:5432/absolute_prod
+PHX_HOST=&lt;YOUR-EC2-PUBLIC-IP&gt;
+PORT=4000
+EOF
+
+# Build & Run Production Containers
+docker compose -f compose.prod.yaml up -d --build
+
+# Run Migrations
+docker compose -f compose.prod.yaml exec app /app/bin/migrate</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="card bg-base-200 border border-base-300 shadow-sm">
+      <div class="card-body">
+        <h2 class="card-title text-lg flex items-center gap-2 text-info">
+          <span class="badge badge-info font-bold">Step 4</span> Useful Management Commands
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono mt-2">
+          <div class="bg-base-100 p-3 rounded-box border border-base-300">
+            <span class="text-base-content/50 block font-sans mb-1">Check container logs:</span>
+            <code>docker compose -f compose.prod.yaml logs -f app</code>
+          </div>
+          <div class="bg-base-100 p-3 rounded-box border border-base-300">
+            <span class="text-base-content/50 block font-sans mb-1">Re-deploy latest changes:</span>
+            <code>git pull && docker compose -f compose.prod.yaml up -d --build</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layouts.app>
