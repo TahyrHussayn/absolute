@@ -1,7 +1,7 @@
 # OpenID Connect (OIDC) Provider for Keyless GitHub Actions Authentication
 resource "aws_iam_openid_connect_provider" "github" {
   url            = "https://token.actions.githubusercontent.com"
-  client_id_list = ["sts.amazonaws.com", "https://github.com/TahyrHussayn"]
+  client_id_list = ["sts.amazonaws.com", "https://github.com/TahyrHussayn", "https://github.com/tahyrhussayn"]
   thumbprint_list = [
     "6938fd4d98bab03faadb97b34396831e3780aea1",
     "1c58a21d286dd77ed79d9af1380db314294d29f7"
@@ -24,10 +24,18 @@ resource "aws_iam_role" "github_actions" {
         }
         Condition = {
           StringEquals = {
-            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+            "token.actions.githubusercontent.com:aud" = [
+              "sts.amazonaws.com",
+              "https://github.com/TahyrHussayn",
+              "https://github.com/tahyrhussayn"
+            ]
           }
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:*absolute:*"
+            "token.actions.githubusercontent.com:sub" = [
+              "repo:TahyrHussayn/absolute:*",
+              "repo:tahyrhussayn/absolute:*",
+              "repo:*absolute:*"
+            ]
           }
         }
       }
