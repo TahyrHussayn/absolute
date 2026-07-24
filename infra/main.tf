@@ -168,6 +168,12 @@ resource "aws_iam_role_policy" "ec2_ssm_policy" {
   })
 }
 
+# Attach AWS Managed SSM Instance Core policy to allow SSM session manager & remote management
+resource "aws_iam_role_policy_attachment" "ec2_ssm_managed_core" {
+  role       = aws_iam_role.ec2_ssm_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
 resource "aws_iam_instance_profile" "ec2_profile" {
   name = "absolute-ec2-instance-profile-${var.environment}"
   role = aws_iam_role.ec2_ssm_role.name
@@ -175,6 +181,7 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 
 # Provision Multi-Node EC2 BEAM Instances
 resource "aws_instance" "beam_nodes" {
+  depends_on             = [aws_iam_role_policy_attachment.ec2_ssm_managed_core]
   count                  = var.node_count
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
