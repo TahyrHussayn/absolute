@@ -3,7 +3,7 @@ set -e
 
 # Update and install dependencies
 sudo apt-get update -y
-sudo apt-get install -y ca-certificates curl gnupg git openssl unzip
+sudo apt-get install -y ca-certificates curl gnupg unzip jq
 
 # Install AWS CLI v2
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
@@ -22,7 +22,7 @@ echo \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 sudo apt-get update -y
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io
 
 sudo usermod -aG docker ubuntu
 
@@ -31,19 +31,8 @@ IMDS_TOKEN=$(curl -s -f -X PUT "http://169.254.169.254/latest/api/token" -H "X-a
 
 if [ -n "$IMDS_TOKEN" ]; then
   PRIVATE_IP=$(curl -s -f -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" http://169.254.169.254/latest/meta-data/local-ipv4 || hostname -I | awk '{print $1}')
-  PUBLIC_IP=$(curl -s -f -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4 || echo "$PRIVATE_IP")
 else
   PRIVATE_IP=$(hostname -I | awk '{print $1}')
-  PUBLIC_IP="$PRIVATE_IP"
-fi
-
-# Setup project directory
-mkdir -p /opt/absolute
-cd /opt/absolute
-
-# Clone repo if empty
-if [ ! -f "compose.prod.yaml" ]; then
-  git clone ${repo_url} .
 fi
 
 # Fetch encrypted secrets from AWS SSM Parameter Store dynamically
@@ -51,25 +40,36 @@ AWS_REGION="${aws_region}"
 ENV_NAME="${environment}"
 
 POSTGRES_PASS=$(aws ssm get-parameter --name "/absolute/$ENV_NAME/postgres_password" --with-decryption --region $AWS_REGION --query "Parameter.Value" --output text)
+POSTGRES_HOST=$(aws ssm get-parameter --name "/absolute/$ENV_NAME/postgres_host" --region $AWS_REGION --query "Parameter.Value" --output text)
 SECRET_KEY=$(aws ssm get-parameter --name "/absolute/$ENV_NAME/secret_key_base" --with-decryption --region $AWS_REGION --query "Parameter.Value" --output text)
 COOKIE=$(aws ssm get-parameter --name "/absolute/$ENV_NAME/beam_cookie" --with-decryption --region $AWS_REGION --query "Parameter.Value" --output text)
 
-# Write production .env
-cat << EOF > .env
-SECRET_KEY_BASE=$SECRET_KEY
-BEAM_COOKIE=$COOKIE
-RELEASE_NODE=absolute@$PRIVATE_IP
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=$POSTGRES_PASS
-POSTGRES_DB=absolute_prod
-DATABASE_URL=ecto://postgres:$POSTGRES_PASS@postgres:5432/absolute_prod
-PHX_HOST=$PUBLIC_IP
-PORT=4000
-EOF
+# Login to ECR
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+aws ecr get-login-password --region $AWS_REGION | sudo docker login --username AWS --password-stdin $ECR_REGISTRY
 
-# Build & launch containers
-docker compose -f compose.prod.yaml up -d --build
+# Pull the specific image tag managed by Terraform
+IMAGE_URI="$ECR_REGISTRY/absolute-$ENV_NAME:${image_tag}"
+sudo docker pull $IMAGE_URI
 
-# Run database migrations
-sleep 10
-docker compose -f compose.prod.yaml exec -T app /app/bin/migrate || true
+# Stop existing container if any (useful if script is re-run)
+sudo docker stop absolute_app || true
+sudo docker rm absolute_app || true
+
+# Run database migrations before starting the app
+sudo docker run --rm \
+  -e DATABASE_URL="ecto://postgres:$POSTGRES_PASS@$POSTGRES_HOST:5432/absolute_prod" \
+  -e SECRET_KEY_BASE="$SECRET_KEY" \
+  $IMAGE_URI /app/bin/migrate
+
+# Start the application
+sudo docker run -d --name absolute_app --restart always --net host \
+  -e PORT=4000 \
+  -e PHX_HOST="0.0.0.0" \
+  -e DATABASE_URL="ecto://postgres:$POSTGRES_PASS@$POSTGRES_HOST:5432/absolute_prod" \
+  -e SECRET_KEY_BASE="$SECRET_KEY" \
+  -e RELEASE_NODE="absolute@$PRIVATE_IP" \
+  -e RELEASE_COOKIE="$COOKIE" \
+  -e PHX_SERVER="true" \
+  $IMAGE_URI

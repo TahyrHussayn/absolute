@@ -28,5 +28,18 @@ config :swoosh, local: false
 # Do not print debug messages in production
 config :logger, level: :info
 
+config :libcluster,
+  topologies: [
+    ec2_beam_nodes: [
+      strategy: Cluster.Strategy.EC2,
+      config: [
+        ec2_tagname: "Name",
+        ec2_tagvalue: "absolute-beam-node",
+        app_prefix: "absolute",
+        polling_interval: 10_000
+      ]
+    ]
+  ]
+
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.

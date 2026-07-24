@@ -1,9 +1,11 @@
 defmodule AbsoluteWeb.HealthController do
   use AbsoluteWeb, :controller
 
+  alias Ecto.Adapters.SQL
+
   def check(conn, _params) do
     db_status =
-      case Ecto.Adapters.SQL.query(Absolute.Repo, "SELECT 1", []) do
+      case SQL.query(Absolute.Repo, "SELECT 1", []) do
         {:ok, _} -> "up"
         _ -> "down"
       end

@@ -7,10 +7,12 @@ defmodule Absolute.Application do
 
   @impl true
   def start(_type, _args) do
+    topologies = Application.get_env(:libcluster, :topologies) || []
+
     children = [
       AbsoluteWeb.Telemetry,
       Absolute.Repo,
-      {DNSCluster, query: Application.get_env(:absolute, :dns_cluster_query) || :ignore},
+      {Cluster.Supervisor, [topologies, [name: Absolute.ClusterSupervisor]]},
       {Phoenix.PubSub, name: Absolute.PubSub},
       {Absolute.Counter, 0},
       Absolute.CrashWorker,

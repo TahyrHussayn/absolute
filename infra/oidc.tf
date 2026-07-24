@@ -1,8 +1,4 @@
 # OpenID Connect (OIDC) Provider for Keyless GitHub Actions Authentication
-import {
-  to = aws_iam_openid_connect_provider.github
-  id = "arn:aws:iam::173322644048:oidc-provider/token.actions.githubusercontent.com"
-}
 
 resource "aws_iam_openid_connect_provider" "github" {
   url            = "https://token.actions.githubusercontent.com"
@@ -32,7 +28,7 @@ resource "aws_iam_role" "github_actions" {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:*:*"
+            "token.actions.githubusercontent.com:sub" = "repo:$${var.github_repo}:*"
           }
         }
       }

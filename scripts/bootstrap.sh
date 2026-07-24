@@ -39,11 +39,11 @@ ARN=$(echo "$CALLER_IDENTITY" | grep -o '"Arn": "[^"]*' | cut -d'"' -f4)
 echo -e "${GREEN}✓ Authenticated as:${NC} ${BOLD}${ARN}${NC}"
 echo -e "${GREEN}✓ AWS Account ID:${NC}   ${BOLD}${ACCOUNT_ID}${NC}"
 
-# 3. Initialize Terraform
-echo -e "\n${YELLOW}📦 Initializing Terraform in infra/...${NC}"
-terraform -chdir=infra init -reconfigure
+# 3. Initialize Terraform locally (without S3 backend)
+echo -e "\n${YELLOW}📦 Initializing Terraform locally...${NC}"
+terraform -chdir=infra init -reconfigure -backend=false
 
-# 4. Target Bootstrap Resources & Sync Remote State
+# 4. Target Bootstrap Resources
 echo -e "\n${YELLOW}🏗️ Provisioning S3 Backend, DynamoDB Locks, and OIDC Keyless Role...${NC}"
 terraform -chdir=infra apply \
   -target=aws_s3_bucket.tf_state \
@@ -53,7 +53,16 @@ terraform -chdir=infra apply \
   -target=aws_iam_role_policy_attachment.github_actions_admin \
   -auto-approve
 
-echo -e "\n${YELLOW}🔄 Synchronizing Full Infrastructure State to S3 Remote Backend...${NC}"
+# 5. Migrate State to S3 Remote Backend
+echo -e "\n${YELLOW}🔄 Migrating State to S3 Remote Backend...${NC}"
+terraform -chdir=infra init -force-copy \
+  -backend-config="bucket=absolute-tfstate-production" \
+  -backend-config="key=state/terraform.tfstate" \
+  -backend-config="region=us-east-1" \
+  -backend-config="encrypt=true" \
+  -backend-config="dynamodb_table=absolute-tflocks-production"
+
+echo -e "\n${YELLOW}🔄 Synchronizing Full Infrastructure State...${NC}"
 terraform -chdir=infra apply -auto-approve
 
 echo -e "\n${BOLD}${GREEN}=====================================================${NC}"

@@ -52,50 +52,15 @@ resource "aws_security_group" "beam_cluster_sg" {
   description = "Security group for Absolute Elixir/BEAM cluster nodes"
   vpc_id      = data.aws_vpc.default.id
 
-  # Inbound HTTP
+  # Inbound HTTP from ALB (Port 4000 for the app)
   ingress {
-    description = "HTTP Public Access"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description     = "HTTP from ALB"
+    from_port       = 4000
+    to_port         = 4000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
   }
 
-  # Inbound HTTPS
-  ingress {
-    description = "HTTPS Public Access"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Inbound SSH
-  ingress {
-    description = "SSH Access"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Inbound Grafana Dashboard
-  ingress {
-    description = "Grafana Dashboard Access"
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Inbound Prometheus Metrics Dashboard
-  ingress {
-    description = "Prometheus Metrics Access"
-    from_port   = 9090
-    to_port     = 9090
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 
   # Inbound Erlang Port Mapper Daemon (EPMD) - Internal SG only
   ingress {
@@ -163,6 +128,17 @@ resource "aws_iam_role_policy" "ec2_ssm_policy" {
           "ssm:GetParameterHistory"
         ]
         Resource = "arn:aws:ssm:${var.aws_region}:*:parameter/absolute/${var.environment}/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:DescribeInstances",
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ]
+        Resource = "*"
       }
     ]
   })
@@ -179,44 +155,4 @@ resource "aws_iam_instance_profile" "ec2_profile" {
   role = aws_iam_role.ec2_ssm_role.name
 }
 
-# Provision Multi-Node EC2 BEAM Instances
-resource "aws_instance" "beam_nodes" {
-  depends_on             = [aws_iam_role_policy_attachment.ec2_ssm_managed_core]
-  count                  = var.node_count
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = var.instance_type
-  subnet_id              = element(data.aws_subnets.default.ids, count.index)
-  vpc_security_group_ids = [aws_security_group.beam_cluster_sg.id]
-  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
-  key_name               = var.key_name != "" ? var.key_name : null
 
-  user_data = templatefile("${path.module}/user_data.tftpl", {
-    repo_url    = var.repo_url
-    environment = var.environment
-    aws_region  = var.aws_region
-  })
-
-  metadata_options {
-    http_endpoint               = "enabled"
-    http_tokens                 = "required" # Enforce IMDSv2 (Zero SSRF credential leaks)
-    http_put_response_hop_limit = 2
-  }
-
-  tags = {
-    Name        = "absolute-beam-node-${count.index + 1}"
-    Environment = var.environment
-    NodeIndex   = tostring(count.index + 1)
-  }
-}
-
-# Dedicated Elastic IPs (EIP) for permanent static public IPv4 addresses
-resource "aws_eip" "beam_nodes_eip" {
-  count    = var.node_count
-  instance = aws_instance.beam_nodes[count.index].id
-  domain   = "vpc"
-
-  tags = {
-    Name        = "absolute-beam-eip-${count.index + 1}"
-    Environment = var.environment
-  }
-}

@@ -1,6 +1,11 @@
 # Terraform Remote Backend & State Locking Resources (S3 + DynamoDB)
 # Run `terraform apply` once to provision the S3 bucket & DynamoDB table for remote state storage.
 
+terraform {
+  backend "s3" {}
+}
+
+
 resource "aws_s3_bucket" "tf_state" {
   bucket        = "absolute-tfstate-${var.environment}"
   force_destroy = false

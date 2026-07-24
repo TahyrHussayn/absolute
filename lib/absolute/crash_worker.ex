@@ -12,11 +12,9 @@ defmodule Absolute.CrashWorker do
   end
 
   def get_status do
-    try do
-      GenServer.call(__MODULE__, :get_status, 1000)
-    catch
-      :exit, _ -> %{status: :crashing, restarts: get_restarts(), uptime_seconds: 0}
-    end
+    GenServer.call(__MODULE__, :get_status, 1000)
+  catch
+    :exit, _ -> %{status: :crashing, restarts: get_restarts(), uptime_seconds: 0}
   end
 
   def crash! do

@@ -108,7 +108,7 @@ defmodule AbsoluteWeb.PlaygroundLive do
 
       tasks =
         for i <- 1..count do
-          Task.async(fn -> :math.sin(i) + :math.cos(i) end)
+          Task.async(fn -> math_work(i) end)
         end
 
       _results = Task.await_many(tasks, 30_000)
@@ -971,4 +971,6 @@ defmodule AbsoluteWeb.PlaygroundLive do
     </Layouts.app>
     """
   end
+
+  defp math_work(i), do: :math.sin(i) + :math.cos(i)
 end

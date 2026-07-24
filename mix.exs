@@ -10,6 +10,14 @@ defmodule Absolute.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.github": :test
+      ],
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader]
     ]
@@ -27,7 +35,14 @@ defmodule Absolute.MixProject do
 
   def cli do
     [
-      preferred_envs: [precommit: :test]
+      preferred_envs: [
+        precommit: :test,
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.github": :test
+      ]
     ]
   end
 
@@ -72,7 +87,16 @@ defmodule Absolute.MixProject do
       {:gettext, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
-      {:bandit, "~> 1.5"}
+      {:libcluster, "~> 3.3"},
+      {:ex_aws, "~> 2.1"},
+      {:ex_aws_ec2, "~> 2.0"},
+      {:sweet_xml, "~> 0.7"},
+      {:bandit, "~> 1.5"},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
+      {:excoveralls, "~> 0.18", only: :test},
+      {:excellent_migrations, "~> 0.1", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -95,7 +119,16 @@ defmodule Absolute.MixProject do
         "esbuild absolute --minify",
         "phx.digest"
       ],
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"],
+      precommit: [
+        "compile --warnings-as-errors",
+        "deps.unlock --unused",
+        "format",
+        "credo --strict",
+        "excellent_migrations.check_safety",
+        "dialyzer",
+        "sobelow",
+        "test"
+      ],
       bootstrap: ["cmd ./scripts/bootstrap.sh"],
       destroy: ["cmd ./scripts/destroy.sh"]
     ]

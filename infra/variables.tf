@@ -46,3 +46,9 @@ variable "github_repo" {
   type        = string
   default     = "tahyrhussayn/absolute"
 }
+
+variable "image_tag" {
+  description = "Docker image tag to deploy to the ASG"
+  type        = string
+  default     = "latest"
+}
