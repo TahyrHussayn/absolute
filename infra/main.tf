@@ -201,3 +201,15 @@ resource "aws_instance" "beam_nodes" {
     NodeIndex   = tostring(count.index + 1)
   }
 }
+
+# Dedicated Elastic IPs (EIP) for permanent static public IPv4 addresses
+resource "aws_eip" "beam_nodes_eip" {
+  count    = var.node_count
+  instance = aws_instance.beam_nodes[count.index].id
+  domain   = "vpc"
+
+  tags = {
+    Name        = "absolute-beam-eip-${count.index + 1}"
+    Environment = var.environment
+  }
+}
