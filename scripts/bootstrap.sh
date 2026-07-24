@@ -43,15 +43,18 @@ echo -e "${GREEN}✓ AWS Account ID:${NC}   ${BOLD}${ACCOUNT_ID}${NC}"
 echo -e "\n${YELLOW}📦 Initializing Terraform in infra/...${NC}"
 terraform -chdir=infra init -reconfigure
 
-# 4. Target Bootstrap Resources (S3 Backend, DynamoDB, OIDC Provider, IAM Role)
+# 4. Target Bootstrap Resources & Sync Remote State
 echo -e "\n${YELLOW}🏗️ Provisioning S3 Backend, DynamoDB Locks, and OIDC Keyless Role...${NC}"
 terraform -chdir=infra apply \
-  -target=aws_s3_bucket.tfstate \
-  -target=aws_dynamodb_table.tflocks \
+  -target=aws_s3_bucket.tf_state \
+  -target=aws_dynamodb_table.tf_locks \
   -target=aws_iam_openid_connect_provider.github \
   -target=aws_iam_role.github_actions \
   -target=aws_iam_role_policy_attachment.github_actions_admin \
   -auto-approve
+
+echo -e "\n${YELLOW}🔄 Synchronizing Full Infrastructure State to S3 Remote Backend...${NC}"
+terraform -chdir=infra apply -auto-approve
 
 echo -e "\n${BOLD}${GREEN}=====================================================${NC}"
 echo -e "${BOLD}${GREEN} 🎉 Day 0 AWS Bootstrap Complete!                    ${NC}"
