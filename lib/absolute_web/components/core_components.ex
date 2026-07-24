@@ -29,9 +29,9 @@ defmodule AbsoluteWeb.CoreComponents do
   use Phoenix.Component
   use Gettext, backend: AbsoluteWeb.Gettext
 
-  alias Phoenix.LiveView.JS
   alias Phoenix.HTML.Form
   alias Phoenix.HTML.FormField
+  alias Phoenix.LiveView.JS
 
   @doc """
   Renders flash notices.

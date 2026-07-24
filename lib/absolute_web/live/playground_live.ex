@@ -102,27 +102,29 @@ defmodule AbsoluteWeb.PlaygroundLive do
     socket = assign(socket, :spawning?, true)
     pid = self()
 
-    Task.start(fn ->
-      start_mem = :erlang.memory(:total)
-      start_time = System.monotonic_time(:millisecond)
-
-      tasks =
-        for i <- 1..count do
-          Task.async(fn -> math_work(i) end)
-        end
-
-      _results = Task.await_many(tasks, 30_000)
-
-      end_time = System.monotonic_time(:millisecond)
-      end_mem = :erlang.memory(:total)
-
-      duration_ms = end_time - start_time
-      mem_used_mb = Float.round((end_mem - start_mem) / (1024 * 1024), 2)
-
-      send(pid, {:spawn_finished, count, duration_ms, mem_used_mb})
-    end)
+    Task.start(fn -> run_spawn_tasks(count, pid) end)
 
     {:noreply, socket}
+  end
+
+  defp run_spawn_tasks(count, pid) do
+    start_mem = :erlang.memory(:total)
+    start_time = System.monotonic_time(:millisecond)
+
+    tasks =
+      for i <- 1..count do
+        Task.async(fn -> math_work(i) end)
+      end
+
+    _results = Task.await_many(tasks, 30_000)
+
+    end_time = System.monotonic_time(:millisecond)
+    end_mem = :erlang.memory(:total)
+
+    duration_ms = end_time - start_time
+    mem_used_mb = Float.round((end_mem - start_mem) / (1024 * 1024), 2)
+
+    send(pid, {:spawn_finished, count, duration_ms, mem_used_mb})
   end
 
   def handle_event("send_message", %{"message" => msg}, socket) when byte_size(msg) > 0 do

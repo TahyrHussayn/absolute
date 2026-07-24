@@ -9,7 +9,7 @@ resource "aws_launch_template" "beam_lt" {
   }
 
   network_interfaces {
-    security_groups = [aws_security_group.beam_cluster_sg.id]
+    security_groups             = [aws_security_group.beam_cluster_sg.id]
     associate_public_ip_address = true
   }
 
