@@ -23,6 +23,11 @@ data "aws_subnets" "default" {
     name   = "vpc-id"
     values = [data.aws_vpc.default.id]
   }
+
+  filter {
+    name   = "availability-zone"
+    values = ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d", "us-east-1f"]
+  }
 }
 
 # Dynamically query latest Ubuntu 24.04 LTS AMI
