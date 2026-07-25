@@ -5,7 +5,7 @@ defmodule Absolute.SessionWorkerTest do
 
   # Generates a unique charlist session_id for each invocation to prevent registry conflicts.
   defp unique_session_id do
-    'test_session_' ++ to_charlist(System.unique_integer([:positive]))
+    ~c"test_session_" ++ to_charlist(System.unique_integer([:positive]))
   end
 
   # Resolves the pid for a running SessionWorker from the registry.
