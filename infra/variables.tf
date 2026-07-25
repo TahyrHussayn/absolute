@@ -23,16 +23,9 @@ variable "node_count" {
 }
 
 variable "key_name" {
-  description = "Optional AWS SSH Key Pair name for SSH access"
+  description = "Optional AWS SSH Key Pair name for SSH access to EC2 nodes (leave empty to disable)"
   type        = string
   default     = ""
-}
-
-variable "beam_cookie" {
-  description = "Shared Erlang Cookie for BEAM node cluster authentication"
-  type        = string
-  default     = "absolute_secret_beam_cookie_2026"
-  sensitive   = true
 }
 
 variable "repo_url" {
@@ -51,4 +44,10 @@ variable "image_tag" {
   description = "Docker image tag to deploy to the ASG"
   type        = string
   default     = "latest"
+}
+
+variable "alert_email" {
+  description = "Email address for CloudWatch Alarm notifications"
+  type        = string
+  default     = "admin@example.com"
 }

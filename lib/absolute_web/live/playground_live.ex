@@ -107,26 +107,6 @@ defmodule AbsoluteWeb.PlaygroundLive do
     {:noreply, socket}
   end
 
-  defp run_spawn_tasks(count, pid) do
-    start_mem = :erlang.memory(:total)
-    start_time = System.monotonic_time(:millisecond)
-
-    tasks =
-      for i <- 1..count do
-        Task.async(fn -> math_work(i) end)
-      end
-
-    _results = Task.await_many(tasks, 30_000)
-
-    end_time = System.monotonic_time(:millisecond)
-    end_mem = :erlang.memory(:total)
-
-    duration_ms = end_time - start_time
-    mem_used_mb = Float.round((end_mem - start_mem) / (1024 * 1024), 2)
-
-    send(pid, {:spawn_finished, count, duration_ms, mem_used_mb})
-  end
-
   def handle_event("send_message", %{"message" => msg}, socket) when byte_size(msg) > 0 do
     message_data = %{
       id: to_string(System.unique_integer([:positive])),
@@ -350,6 +330,26 @@ defmodule AbsoluteWeb.PlaygroundLive do
 
   defp tail_recursive_sum(0, acc), do: acc
   defp tail_recursive_sum(n, acc), do: tail_recursive_sum(n - 1, acc + n)
+
+  defp run_spawn_tasks(count, pid) do
+    start_mem = :erlang.memory(:total)
+    start_time = System.monotonic_time(:millisecond)
+
+    tasks =
+      for i <- 1..count do
+        Task.async(fn -> math_work(i) end)
+      end
+
+    _results = Task.await_many(tasks, 30_000)
+
+    end_time = System.monotonic_time(:millisecond)
+    end_mem = :erlang.memory(:total)
+
+    duration_ms = end_time - start_time
+    mem_used_mb = Float.round((end_mem - start_mem) / (1024 * 1024), 2)
+
+    send(pid, {:spawn_finished, count, duration_ms, mem_used_mb})
+  end
 
   defp list_presences do
     Presence.list(@presence_topic)
@@ -602,6 +602,47 @@ defmodule AbsoluteWeb.PlaygroundLive do
                   />
                   <button type="submit" class="btn btn-info btn-sm">Send</button>
                 </.form>
+              </div>
+            </div>
+          </div>
+
+          <%!-- Demo 5: Live BEAM Introspection Dashboard --%>
+          <div class="card bg-base-200 shadow-md border border-base-300 md:col-span-2">
+            <div class="card-body">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="card-title text-xl flex items-center gap-2">
+                  <.icon name="hero-chart-bar" class="size-5 text-warning" />
+                  5. Live BEAM Introspection Dashboard
+                </h2>
+                <span class="badge badge-warning badge-soft">Updated Live (1s)</span>
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="bg-base-100 p-4 rounded-box border border-base-300 text-center">
+                  <div class="text-xs text-base-content/60 font-medium">OTP Version</div>
+                  <div class="text-xl font-extrabold text-primary font-mono mt-1">
+                    OTP {@stats.otp_release}
+                  </div>
+                </div>
+                <div class="bg-base-100 p-4 rounded-box border border-base-300 text-center">
+                  <div class="text-xs text-base-content/60 font-medium">Active Processes</div>
+                  <div class="text-xl font-extrabold text-secondary font-mono mt-1">
+                    {@stats.process_count}
+                    <span class="text-xs text-base-content/50 font-normal">/ {@stats.process_limit}</span>
+                  </div>
+                </div>
+                <div class="bg-base-100 p-4 rounded-box border border-base-300 text-center">
+                  <div class="text-xs text-base-content/60 font-medium">CPU Schedulers</div>
+                  <div class="text-xl font-extrabold text-accent font-mono mt-1">
+                    {@stats.schedulers} Cores
+                  </div>
+                </div>
+                <div class="bg-base-100 p-4 rounded-box border border-base-300 text-center">
+                  <div class="text-xs text-base-content/60 font-medium">Total BEAM Memory</div>
+                  <div class="text-xl font-extrabold text-info font-mono mt-1">
+                    {@stats.total_mb} MB
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -924,47 +965,6 @@ defmodule AbsoluteWeb.PlaygroundLive do
               <div class="bg-base-100 p-4 rounded-box border border-base-300 text-center my-2">
                 <div class="text-xs text-base-content/60">Total System Events Emitted</div>
                 <div class="text-3xl font-black font-mono text-accent mt-1">{@telemetry_count}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Demo 5: BEAM Introspection Dashboard -->
-        <div class="card bg-base-200 shadow-md border border-base-300">
-          <div class="card-body">
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="card-title text-xl flex items-center gap-2">
-                <.icon name="hero-chart-bar" class="size-5 text-warning" />
-                5. Live BEAM Introspection Dashboard
-              </h2>
-              <span class="badge badge-warning badge-soft">Updated Live (1s)</span>
-            </div>
-
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div class="bg-base-100 p-4 rounded-box border border-base-300 text-center">
-                <div class="text-xs text-base-content/60 font-medium">OTP Version</div>
-                <div class="text-xl font-extrabold text-primary font-mono mt-1">
-                  OTP {@stats.otp_release}
-                </div>
-              </div>
-              <div class="bg-base-100 p-4 rounded-box border border-base-300 text-center">
-                <div class="text-xs text-base-content/60 font-medium">Active Processes</div>
-                <div class="text-xl font-extrabold text-secondary font-mono mt-1">
-                  {@stats.process_count}
-                  <span class="text-xs text-base-content/50 font-normal">/ {@stats.process_limit}</span>
-                </div>
-              </div>
-              <div class="bg-base-100 p-4 rounded-box border border-base-300 text-center">
-                <div class="text-xs text-base-content/60 font-medium">CPU Schedulers</div>
-                <div class="text-xl font-extrabold text-accent font-mono mt-1">
-                  {@stats.schedulers} Cores
-                </div>
-              </div>
-              <div class="bg-base-100 p-4 rounded-box border border-base-300 text-center">
-                <div class="text-xs text-base-content/60 font-medium">Total BEAM Memory</div>
-                <div class="text-xl font-extrabold text-info font-mono mt-1">
-                  {@stats.total_mb} MB
-                </div>
               </div>
             </div>
           </div>

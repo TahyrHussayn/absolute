@@ -7,10 +7,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-permissions:
-  id-token: write # Required for requesting temporary OIDC JWT tokens from GitHub
-  contents: read
-  pull-requests: write
+permissions: read-all
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -26,7 +23,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:18
+        image: postgres:17
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -42,20 +39,20 @@ jobs:
     env:
       MIX_ENV: test
       DATABASE_URL: ecto://postgres:postgres@localhost:5432/absolute_test
-      SECRET_KEY_BASE: fe4977464010323315757a3e30129202518e1d2c67c5
+      SECRET_KEY_BASE: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup BEAM (Elixir / OTP)
-        uses: erlef/setup-beam@v1
+        uses: erlef/setup-beam@5304e04ea2b355f03681464e683d92e3b2f18451 # v1.18.2
         with:
           elixir-version: '1.17'
           otp-version: '27'
 
       - name: Restore dependency cache
-        uses: actions/cache@v4
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
           path: |
             deps
@@ -95,12 +92,14 @@ jobs:
     name: 🐳 Validate Dockerfile Build
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c58e37 # v3.10.0
       - name: Build Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@1dc73863535b631f98a3f3b55939ee839f6b2e55 # v5.4.0
         with:
           context: .
           push: false
@@ -110,7 +109,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # v0.28.0
         with:
           image-ref: 'absolute:latest'
           format: 'table'
@@ -126,15 +125,19 @@ jobs:
     name: 🏗️ Validate Infrastructure Code
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: hashicorp/setup-terraform@b9cd54531f9b007c06a5be4e5cf2f8b36104e5ea # v3.2.0
         with:
           terraform_version: 1.9.8
       - name: Check Terraform formatting
         run: terraform fmt -check infra/
       - name: Configure AWS Credentials via OIDC Keyless Auth
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/absolute-github-actions-production
           aws-region: us-east-1
@@ -147,28 +150,31 @@ jobs:
             -backend-config="key=state/terraform.tfstate" \
             -backend-config="region=us-east-1" \
             -backend-config="encrypt=true" \
-            -backend-config="dynamodb_table=absolute-tflocks-production"
+            -backend-config="use_lockfile=true"
 
       - name: Validate Terraform configuration
         run: terraform -chdir=infra validate
 
       - name: Run tfsec
-        uses: aquasecurity/tfsec-action@v1.0.3
+        uses: aquasecurity/tfsec-action@b466648d6d39e7621361aa48bf5d070d2f0d5698 # v1.0.3
         with:
           working_directory: infra/
 
       - name: Terraform Plan
         id: plan
         if: github.event_name == 'pull_request'
-        run: terraform -chdir=infra plan -no-color -out=tfplan
+        run: |
+          terraform -chdir=infra plan \
+            -no-color \
+            -out=tfplan
 
-      - name: Save Terraform Plan Output
+      - name: Save Terraform Plan as readable text
         if: github.event_name == 'pull_request'
-        run: terraform -chdir=infra show -no-color tfplan > tfplan.txt
+        run: terraform -chdir=infra show -no-color tfplan > infra/tfplan.txt
 
-      - name: Comment PR
+      - name: Comment PR with Terraform Plan
         if: github.event_name == 'pull_request'
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@331f8f5b4215f0445d3c07b4967662a32a2d3e31 # v2.9.2
         with:
           header: terraform-plan
           path: infra/tfplan.txt
@@ -183,7 +189,7 @@ jobs:
     timeout-minutes: 10
     services:
       postgres:
-        image: postgres:18
+        image: postgres:17
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -196,13 +202,13 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c58e37 # v3.10.0
 
       - name: Load Cached Docker Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@1dc73863535b631f98a3f3b55939ee839f6b2e55 # v5.4.0
         with:
           context: .
           push: false
@@ -214,7 +220,7 @@ jobs:
         run: |
           docker run --rm --net host \
             -e DATABASE_URL="ecto://postgres:postgres@localhost:5432/absolute_prod" \
-            -e SECRET_KEY_BASE="testsecretkeybaseforci1234567890" \
+            -e SECRET_KEY_BASE="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
             absolute:latest /app/bin/migrate
 
       - name: Start Application Container
@@ -223,13 +229,13 @@ jobs:
             -e PORT=4000 \
             -e PHX_HOST="localhost" \
             -e DATABASE_URL="ecto://postgres:postgres@localhost:5432/absolute_prod" \
-            -e SECRET_KEY_BASE="testsecretkeybaseforci1234567890" \
+            -e SECRET_KEY_BASE="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
             -e PHX_SERVER="true" \
             absolute:latest
           sleep 5
 
       - name: Run k6 Load Test
-        uses: grafana/k6-action@v0.3.1
+        uses: grafana/k6-action@4a0e13a30651cbb12ea0e218bbef02bd34ca8c22 # v0.3.1
         with:
           filename: k6/load_test.js
 
@@ -238,27 +244,32 @@ jobs:
   # -------------------------------------------------------------
   deploy:
     name: 🚀 Deploy to AWS Cluster (OIDC Keyless)
-    needs: [test, docker, terraform, performance_test] # BLOCK DEPLOYMENT if any test/check fails!
+    needs: [test, docker, terraform, performance_test]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     concurrency:
       group: deploy-production
       cancel-in-progress: false
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
+      packages: write
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Configure AWS Credentials via OIDC Keyless Auth
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/absolute-github-actions-production
           aws-region: us-east-1
           audience: sts.amazonaws.com
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@b9cd54531f9b007c06a5be4e5cf2f8b36104e5ea # v3.2.0
         with:
           terraform_version: 1.9.8
 
@@ -269,7 +280,7 @@ jobs:
             -backend-config="key=state/terraform.tfstate" \
             -backend-config="region=us-east-1" \
             -backend-config="encrypt=true" \
-            -backend-config="dynamodb_table=absolute-tflocks-production"
+            -backend-config="use_lockfile=true"
 
       - name: Ensure ECR Repository Exists
         run: terraform -chdir=infra apply -target=aws_ecr_repository.absolute_repo -auto-approve
@@ -279,24 +290,32 @@ jobs:
         run: echo "url=$(terraform -chdir=infra output -raw ecr_repository_url)" >> $GITHUB_OUTPUT
 
       - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
 
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c58e37 # v3.10.0
 
       - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
+        id: build
+        uses: docker/build-push-action@1dc73863535b631f98a3f3b55939ee839f6b2e55 # v5.4.0
         with:
           context: .
           push: true
           tags: |
             ${{ steps.ecr-url.outputs.url }}:${{ github.sha }}
-            ${{ steps.ecr-url.outputs.url }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          provenance: mode=max
+
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@c074443f1aee8d4aeeae555aebba3282517141b2 # v2.2.0
+        with:
+          subject-name: ${{ steps.ecr-url.outputs.url }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v3.5.0
+        uses: sigstore/cosign-installer@dc72c7d5c4d10cd6bcb8cf6e3fd625a9e5e537da # v3.5.0
 
       - name: Sign the published Docker image
         env:
@@ -309,7 +328,10 @@ jobs:
           echo "PREVIOUS_TAG=$PREVIOUS_TAG" >> $GITHUB_ENV
 
       - name: Apply Infrastructure (ALB, ASG, RDS)
-        run: terraform -chdir=infra apply -var="image_tag=${{ github.sha }}" -auto-approve
+        run: |
+          terraform -chdir=infra apply \
+            -var="image_tag=${{ github.sha }}" \
+            -auto-approve
 
       - name: Verify Deployed Cluster Health
         run: |
@@ -333,8 +355,9 @@ jobs:
         if: failure()
         run: |
           echo "🚨 Deployment failed! Rolling back to image tag: $PREVIOUS_TAG"
-          terraform -chdir=infra apply -var="image_tag=$PREVIOUS_TAG" -auto-approve
-
+          terraform -chdir=infra apply \
+            -var="image_tag=$PREVIOUS_TAG" \
+            -auto-approve
 
       - name: Deployment Completed
         run: echo "🎉 Successfully deployed Absolute BEAM Cluster via Keyless OIDC Authentication!"

@@ -1,103 +1,363 @@
 <Layouts.app flash={@flash}>
-  <div class="py-10 space-y-12">
-    <!-- Hero Section -->
-    <div class="text-center space-y-6 max-w-3xl mx-auto">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider">
-        <.icon name="hero-sparkles" class="size-4" /> Phoenix 1.8 & Erlang/OTP
+  <div class="py-8 space-y-20">
+    <%!-- ═══════════════════════════════ HERO ═══════════════════════════════ --%>
+    <section class="relative text-center space-y-8 max-w-4xl mx-auto">
+      <%!-- Background glow blobs --%>
+      <div
+        class="pointer-events-none absolute -top-16 left-1/2 -translate-x-1/2 w-[600px] h-[260px] rounded-full bg-primary/10 blur-3xl"
+        aria-hidden="true"
+      >
       </div>
-      <h1 class="text-4xl font-extrabold tracking-tight sm:text-6xl text-balance">
-        Experience the Pure Magic of the <span class="text-primary">BEAM</span>
+      <div
+        class="pointer-events-none absolute -top-8 left-1/4 w-[300px] h-[160px] rounded-full bg-accent/8 blur-2xl"
+        aria-hidden="true"
+      >
+      </div>
+
+      <%!-- Badge --%>
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest">
+        <.icon name="hero-bolt" class="size-3.5" /> Phoenix 1.8 · Erlang/OTP 27 · LiveView Streams
+      </div>
+
+      <%!-- Title --%>
+      <h1 class="text-5xl sm:text-7xl font-black tracking-tight text-balance leading-[1.05]">
+        The Power of the
+        <span class="relative inline-block">
+          <span class="text-primary">BEAM</span>
+          <span class="absolute -bottom-1 left-0 w-full h-1 rounded-full bg-primary/40"></span>
+        </span>
+        <br />in Your Browser
       </h1>
-      <p class="text-lg text-base-content/70 leading-relaxed max-w-2xl mx-auto">
-        Built with Elixir, Phoenix LiveView, and Ecto. Explore real-time concurrency, fault tolerance, live PubSub streaming, and production-ready AWS deployment.
+
+      <p class="text-lg sm:text-xl text-base-content/65 leading-relaxed max-w-2xl mx-auto">
+        An interactive showcase of Elixir's concurrency model, OTP fault-tolerance, real-time LiveView streaming, and production-grade AWS infrastructure — all running live.
       </p>
-      <div class="flex flex-wrap items-center justify-center gap-4 pt-2">
-        <.link navigate={~p"/playground"} class="btn btn-primary btn-lg shadow-md hover:shadow-lg">
-          <.icon name="hero-bolt" class="size-5" /> Launch BEAM Playground
+
+      <%!-- CTA buttons --%>
+      <div class="flex flex-wrap items-center justify-center gap-4">
+        <.link
+          navigate={~p"/playground"}
+          class="btn btn-primary btn-lg shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 transition-all gap-2"
+        >
+          <.icon name="hero-bolt" class="size-5" /> Launch Playground
         </.link>
-        <.link href={~p"/aws-guide"} class="btn btn-outline btn-lg">
-          <.icon name="hero-cloud" class="size-5" /> AWS Deployment Guide
+        <.link
+          navigate={~p"/cluster"}
+          class="btn btn-outline btn-lg gap-2 hover:-translate-y-0.5 transition-all"
+        >
+          <.icon name="hero-globe-alt" class="size-5" /> Cluster Mesh
         </.link>
-      </div>
-    </div>
-
-    <!-- Feature Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
-      <div class="card bg-base-200 border border-base-300 shadow-sm hover:shadow-md transition-all">
-        <div class="card-body">
-          <div class="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-2">
-            <.icon name="hero-bolt" class="size-6" />
-          </div>
-          <h2 class="card-title text-lg">Sub-Millisecond Concurrency</h2>
-          <p class="text-sm text-base-content/70">
-            Spawn hundreds of thousands of lightweight processes concurrently on a single CPU core without performance degradation.
-          </p>
-          <div class="card-actions justify-end mt-4">
-            <.link
-              navigate={~p"/playground"}
-              class="text-xs font-bold text-primary flex items-center gap-1 hover:underline"
-            >
-              Try Process Spawner &rarr;
-            </.link>
-          </div>
-        </div>
-      </div>
-
-      <div class="card bg-base-200 border border-base-300 shadow-sm hover:shadow-md transition-all">
-        <div class="card-body">
-          <div class="size-10 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center mb-2">
-            <.icon name="hero-shield-check" class="size-6" />
-          </div>
-          <h2 class="card-title text-lg">Self-Healing OTP</h2>
-          <p class="text-sm text-base-content/70">
-            "Let It Crash" philosophy. Supervisors isolate failures and restart crashed components instantly without user disruption.
-          </p>
-          <div class="card-actions justify-end mt-4">
-            <.link
-              navigate={~p"/playground"}
-              class="text-xs font-bold text-secondary flex items-center gap-1 hover:underline"
-            >
-              Test Crash Supervisor &rarr;
-            </.link>
-          </div>
-        </div>
-      </div>
-
-      <div class="card bg-base-200 border border-base-300 shadow-sm hover:shadow-md transition-all">
-        <div class="card-body">
-          <div class="size-10 rounded-lg bg-accent/10 text-accent flex items-center justify-center mb-2">
-            <.icon name="hero-arrow-path-rounded-square" class="size-6" />
-          </div>
-          <h2 class="card-title text-lg">Real-Time PubSub & LiveView</h2>
-          <p class="text-sm text-base-content/70">
-            Server-rendered HTML over WebSockets. Broadcast state live to thousands of concurrent users with zero custom JS code.
-          </p>
-          <div class="card-actions justify-end mt-4">
-            <.link
-              navigate={~p"/playground"}
-              class="text-xs font-bold text-accent flex items-center gap-1 hover:underline"
-            >
-              Test Multi-Tab Sync &rarr;
-            </.link>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Production Ready Banner -->
-    <div class="card bg-gradient-to-r from-base-300 to-base-200 border border-base-300">
-      <div class="card-body flex flex-col md:flex-row items-center justify-between gap-6">
-        <div>
-          <span class="badge badge-success mb-2">Production Ready</span>
-          <h3 class="text-xl font-bold">Deploy to AWS EC2 with Docker Compose</h3>
-          <p class="text-sm text-base-content/70 mt-1">
-            Includes multi-stage Dockerfile, production compose config, and step-by-step setup for AWS 12-month free tier.
-          </p>
-        </div>
-        <.link href={~p"/aws-guide"} class="btn btn-secondary shrink-0">
-          View Deployment Guide &rarr;
+        <.link href={~p"/aws-guide"} class="btn btn-ghost btn-lg gap-2">
+          <.icon name="hero-cloud" class="size-5 text-secondary" /> AWS Guide
         </.link>
       </div>
-    </div>
+    </section>
+
+    <%!-- ═══════════════════════════════ LIVE STATS STRIP ═══════════════════ --%>
+    <section class="card bg-base-200 border border-base-300 shadow-sm">
+      <div class="card-body py-5">
+        <div class="grid grid-cols-2 sm:grid-cols-4 divide-x divide-base-300 text-center">
+          <div class="px-4">
+            <div class="text-3xl font-black font-mono text-primary">14</div>
+            <div class="text-xs text-base-content/60 font-semibold uppercase tracking-wider mt-1">
+              Interactive Demos
+            </div>
+          </div>
+          <div class="px-4">
+            <div class="text-3xl font-black font-mono text-secondary">100k</div>
+            <div class="text-xs text-base-content/60 font-semibold uppercase tracking-wider mt-1">
+              Concurrent Processes
+            </div>
+          </div>
+          <div class="px-4">
+            <div class="text-3xl font-black font-mono text-accent">~2KB</div>
+            <div class="text-xs text-base-content/60 font-semibold uppercase tracking-wider mt-1">
+              Per BEAM Process
+            </div>
+          </div>
+          <div class="px-4">
+            <div class="text-3xl font-black font-mono text-success">0</div>
+            <div class="text-xs text-base-content/60 font-semibold uppercase tracking-wider mt-1">
+              Custom JS for Chat
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <%!-- ═══════════════════════════════ FEATURES GRID ═════════════════════ --%>
+    <section class="space-y-6">
+      <div class="text-center">
+        <h2 class="text-3xl font-extrabold tracking-tight">Why the BEAM is Different</h2>
+        <p class="mt-2 text-base-content/60 text-sm">
+          Every demo below runs live in your browser — no video, no slides.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <%!-- Concurrency --%>
+        <div class="card bg-base-200 border border-base-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all group">
+          <div class="card-body">
+            <div class="size-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
+              <.icon name="hero-cpu-chip" class="size-6" />
+            </div>
+            <h3 class="card-title text-base font-bold">Mass Concurrency</h3>
+            <p class="text-sm text-base-content/65">
+              Spawn 100,000 green threads in milliseconds. Each process costs ~2KB — not MBs like OS threads.
+            </p>
+            <div class="card-actions mt-3">
+              <.link
+                navigate={~p"/playground"}
+                class="text-xs font-bold text-primary flex items-center gap-1 hover:gap-2 transition-all"
+              >
+                Spawn 100k Processes →
+              </.link>
+            </div>
+          </div>
+        </div>
+
+        <%!-- Fault Tolerance --%>
+        <div class="card bg-base-200 border border-base-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all group">
+          <div class="card-body">
+            <div class="size-11 rounded-xl bg-accent/10 text-accent flex items-center justify-center mb-3 group-hover:bg-accent/20 transition-colors">
+              <.icon name="hero-shield-check" class="size-6" />
+            </div>
+            <h3 class="card-title text-base font-bold">Self-Healing OTP</h3>
+            <p class="text-sm text-base-content/65">
+              "Let it crash." Supervisors detect failures and restart crashed workers in microseconds — automatically.
+            </p>
+            <div class="card-actions mt-3">
+              <.link
+                navigate={~p"/playground"}
+                class="text-xs font-bold text-accent flex items-center gap-1 hover:gap-2 transition-all"
+              >
+                Crash a Worker →
+              </.link>
+            </div>
+          </div>
+        </div>
+
+        <%!-- LiveView --%>
+        <div class="card bg-base-200 border border-base-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all group">
+          <div class="card-body">
+            <div class="size-11 rounded-xl bg-info/10 text-info flex items-center justify-center mb-3 group-hover:bg-info/20 transition-colors">
+              <.icon name="hero-chat-bubble-left-right" class="size-6" />
+            </div>
+            <h3 class="card-title text-base font-bold">Zero-JS Real-Time</h3>
+            <p class="text-sm text-base-content/65">
+              Full multi-tab chat with live presence tracking — powered purely by LiveView Streams and PubSub. Zero client JS.
+            </p>
+            <div class="card-actions mt-3">
+              <.link
+                navigate={~p"/playground"}
+                class="text-xs font-bold text-info flex items-center gap-1 hover:gap-2 transition-all"
+              >
+                Open Live Chat →
+              </.link>
+            </div>
+          </div>
+        </div>
+
+        <%!-- ETS --%>
+        <div class="card bg-base-200 border border-base-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all group">
+          <div class="card-body">
+            <div class="size-11 rounded-xl bg-warning/10 text-warning flex items-center justify-center mb-3 group-hover:bg-warning/20 transition-colors">
+              <.icon name="hero-table-cells" class="size-6" />
+            </div>
+            <h3 class="card-title text-base font-bold">ETS In-Memory Storage</h3>
+            <p class="text-sm text-base-content/65">
+              Data lives in BEAM VM memory — survives GenServer crashes. Crash the manager, watch scores persist.
+            </p>
+            <div class="card-actions mt-3">
+              <.link
+                navigate={~p"/playground"}
+                class="text-xs font-bold text-warning flex items-center gap-1 hover:gap-2 transition-all"
+              >
+                Test ETS Survival →
+              </.link>
+            </div>
+          </div>
+        </div>
+
+        <%!-- Cluster --%>
+        <div class="card bg-base-200 border border-base-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all group">
+          <div class="card-body">
+            <div class="size-11 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center mb-3 group-hover:bg-secondary/20 transition-colors">
+              <.icon name="hero-globe-alt" class="size-6" />
+            </div>
+            <h3 class="card-title text-base font-bold">Distributed Cluster</h3>
+            <p class="text-sm text-base-content/65">
+              Erlang nodes connect over native TCP. PubSub messages route transparently across cloud servers via CRDT.
+            </p>
+            <div class="card-actions mt-3">
+              <.link
+                navigate={~p"/cluster"}
+                class="text-xs font-bold text-secondary flex items-center gap-1 hover:gap-2 transition-all"
+              >
+                View Node Mesh →
+              </.link>
+            </div>
+          </div>
+        </div>
+
+        <%!-- Observability --%>
+        <div class="card bg-base-200 border border-base-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all group">
+          <div class="card-body">
+            <div class="size-11 rounded-xl bg-success/10 text-success flex items-center justify-center mb-3 group-hover:bg-success/20 transition-colors">
+              <.icon name="hero-chart-bar" class="size-6" />
+            </div>
+            <h3 class="card-title text-base font-bold">Full Observability</h3>
+            <p class="text-sm text-base-content/65">
+              Native Prometheus <code>/metrics</code>
+              endpoint, Grafana dashboards, and LiveDashboard process tree inspection.
+            </p>
+            <div class="card-actions mt-3">
+              <a
+                href="/admin/dashboard"
+                class="text-xs font-bold text-success flex items-center gap-1 hover:gap-2 transition-all"
+              >
+                Open LiveDashboard →
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <%!-- ═══════════════════════════════ DEMO SHOWCASE ═════════════════════ --%>
+    <section class="space-y-6">
+      <div class="text-center">
+        <h2 class="text-3xl font-extrabold tracking-tight">14 Interactive BEAM Demos</h2>
+        <p class="mt-2 text-base-content/60 text-sm">
+          All run live inside the browser — no install, no setup needed.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <%= for {num, label, color} <- [
+          {"1", "PubSub Counter", "badge-primary"},
+          {"2", "100k Spawner", "badge-secondary"},
+          {"3", "Let It Crash", "badge-accent"},
+          {"4", "Zero-JS Chat", "badge-info"},
+          {"5", "BEAM Inspector", "badge-warning"},
+          {"6", "ETS Leaderboard", "badge-warning"},
+          {"7", "DynamicSupervisor", "badge-primary"},
+          {"8", "Presence CRDT", "badge-secondary"},
+          {"9", "Agent State", "badge-accent"},
+          {"10", "Registry Lookup", "badge-info"},
+          {"11", "Lazy Streams", "badge-success"},
+          {"12", "Tail Calls", "badge-primary"},
+          {"13", "Binary Parsing", "badge-secondary"},
+          {"14", "Telemetry", "badge-accent"}
+        ] do %>
+          <.link
+            navigate={~p"/playground"}
+            class="flex items-center gap-2.5 p-3 rounded-xl bg-base-200 border border-base-300 hover:border-primary/40 hover:bg-base-300 transition-all group"
+          >
+            <span class={"badge badge-sm font-mono font-bold #{color} badge-soft shrink-0"}>{num}</span>
+            <span class="text-xs font-semibold text-base-content/80 group-hover:text-base-content truncate">{label}</span>
+          </.link>
+        <% end %>
+      </div>
+
+      <div class="text-center">
+        <.link
+          navigate={~p"/playground"}
+          class="btn btn-primary btn-lg shadow-md hover:shadow-primary/30 hover:-translate-y-0.5 transition-all gap-2"
+        >
+          <.icon name="hero-bolt" class="size-5" /> Open Full Playground
+        </.link>
+      </div>
+    </section>
+
+    <%!-- ═══════════════════════════════ TECH STACK ════════════════════════ --%>
+    <section class="space-y-6">
+      <div class="text-center">
+        <h2 class="text-3xl font-extrabold tracking-tight">Tech Stack</h2>
+        <p class="mt-2 text-base-content/60 text-sm">Production-ready from day one.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="card bg-base-200 border border-base-300 shadow-sm">
+          <div class="card-body">
+            <h3 class="font-bold text-sm uppercase tracking-wider text-base-content/50 mb-3">
+              Application
+            </h3>
+            <ul class="space-y-2.5 text-sm">
+              <li class="flex items-center gap-3">
+                <span class="badge badge-primary badge-soft text-xs font-mono">Elixir 1.17</span>
+                <span class="text-base-content/70">BEAM / OTP 27</span>
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="badge badge-accent badge-soft text-xs font-mono">Phoenix 1.8</span>
+                <span class="text-base-content/70">LiveView 1.2 · Bandit server</span>
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="badge badge-secondary badge-soft text-xs font-mono">PostgreSQL</span>
+                <span class="text-base-content/70">Ecto 3.13 · Postgrex</span>
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="badge badge-info badge-soft text-xs font-mono">DaisyUI v5</span>
+                <span class="text-base-content/70">Tailwind v4 · OKLCH palettes</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card bg-base-200 border border-base-300 shadow-sm">
+          <div class="card-body">
+            <h3 class="font-bold text-sm uppercase tracking-wider text-base-content/50 mb-3">
+              Infrastructure
+            </h3>
+            <ul class="space-y-2.5 text-sm">
+              <li class="flex items-center gap-3">
+                <span class="badge badge-warning badge-soft text-xs font-mono">Terraform</span>
+                <span class="text-base-content/70">AWS VPC · EC2 ASG · ALB · RDS</span>
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="badge badge-success badge-soft text-xs font-mono">OIDC</span>
+                <span class="text-base-content/70">Keyless GitHub Actions deployment</span>
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="badge badge-error badge-soft text-xs font-mono">Prometheus</span>
+                <span class="text-base-content/70">Grafana · LiveDashboard</span>
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="badge badge-neutral badge-soft text-xs font-mono">libcluster</span>
+                <span class="text-base-content/70">EC2 strategy · DNS cluster</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <%!-- ═══════════════════════════════ BOTTOM CTA ════════════════════════ --%>
+    <section class="card bg-gradient-to-br from-primary/10 via-base-200 to-accent/10 border border-primary/20 shadow-sm text-center">
+      <div class="card-body py-10 space-y-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-success/10 text-success text-xs font-bold uppercase tracking-wider mx-auto">
+          <.icon name="hero-check-circle" class="size-4" />
+          Production Ready · Free Tier Deployable
+        </div>
+        <h2 class="text-2xl font-extrabold tracking-tight">Ready to deploy to AWS?</h2>
+        <p class="text-base-content/65 text-sm max-w-lg mx-auto">
+          Complete Terraform IaC, multi-stage Dockerfile, keyless OIDC CI/CD, and step-by-step instructions for deploying on AWS EC2 free tier.
+        </p>
+        <div class="flex flex-wrap items-center justify-center gap-4 pt-2">
+          <.link
+            href={~p"/aws-guide"}
+            class="btn btn-secondary btn-lg gap-2 hover:-translate-y-0.5 transition-all"
+          >
+            <.icon name="hero-cloud" class="size-5" /> View AWS Deployment Guide
+          </.link>
+          <a
+            href="/admin/dashboard"
+            class="btn btn-outline btn-lg gap-2 hover:-translate-y-0.5 transition-all"
+          >
+            <.icon name="hero-chart-bar" class="size-5" /> LiveDashboard
+          </a>
+        </div>
+      </div>
+    </section>
   </div>
 </Layouts.app>

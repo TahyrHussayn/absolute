@@ -67,11 +67,25 @@ defmodule AbsoluteWeb.Telemetry do
       summary("vm.memory.total", unit: {:byte, :kilobyte}),
       summary("vm.total_run_queue_lengths.total"),
       summary("vm.total_run_queue_lengths.cpu"),
-      summary("vm.total_run_queue_lengths.io")
+      summary("vm.total_run_queue_lengths.io"),
+
+      # Custom BEAM VM Metrics
+      last_value("absolute.vm.info.process_count"),
+      last_value("absolute.vm.info.total_memory_mb")
     ]
   end
 
-  defp periodic_measurements do
-    []
+  def periodic_measurements do
+    [{AbsoluteWeb.Telemetry, :emit_vm_stats, []}]
+  end
+
+  def emit_vm_stats do
+    :telemetry.execute(
+      [:absolute, :vm, :info],
+      %{
+        process_count: :erlang.system_info(:process_count),
+        total_memory_mb: Float.round(:erlang.memory(:total) / (1024 * 1024), 2)
+      }
+    )
   end
 end

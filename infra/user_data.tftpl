@@ -1,5 +1,46 @@
 #!/bin/bash
-set -e
+# Exit immediately on error, treat unset variables as errors, pipe failures are errors
+set -euo pipefail
+
+# ─── Helper: fetch SSM parameter with explicit error handling ─────────────────
+# NOTE: Bash $${VAR:-default} expansions are escaped below
+#       because Terraform's templatefile() function processes $${...} as interpolation.
+#       Only aws_region, environment, and image_tag are real Terraform template vars.
+fetch_ssm() {
+  local param_name="$1"
+  local with_decrypt="$${2:-false}"
+  local value
+
+  if [ "$with_decrypt" = "true" ]; then
+    value=$(aws ssm get-parameter \
+      --name "$param_name" \
+      --with-decryption \
+      --region "$AWS_REGION" \
+      --query "Parameter.Value" \
+      --output text 2>/dev/null) || {
+      echo "ERROR: Failed to fetch SSM parameter: $param_name" >&2
+      exit 1
+    }
+  else
+    value=$(aws ssm get-parameter \
+      --name "$param_name" \
+      --region "$AWS_REGION" \
+      --query "Parameter.Value" \
+      --output text 2>/dev/null) || {
+      echo "ERROR: Failed to fetch SSM parameter: $param_name" >&2
+      exit 1
+    }
+  fi
+
+  # Guard against empty values
+  if [ -z "$value" ]; then
+    echo "ERROR: SSM parameter $param_name returned an empty value." >&2
+    exit 1
+  fi
+
+  echo "$value"
+}
+# ─────────────────────────────────────────────────────────────────────────────
 
 # Update and install dependencies
 sudo apt-get update -y
@@ -16,9 +57,10 @@ sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
 
+# $${VERSION_CODENAME} is escaped (bash var, not Terraform) — resolves at runtime on the EC2 node
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  $(. /etc/os-release && echo "$${VERSION_CODENAME}") stable" | \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 sudo apt-get update -y
@@ -26,50 +68,67 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io
 
 sudo usermod -aG docker ubuntu
 
-# Get Private & Public IP addresses using IMDSv2 tokens
-IMDS_TOKEN=$(curl -s -f -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" || true)
+# Get Private IP address using IMDSv2 tokens
+IMDS_TOKEN=$(curl -s -f -X PUT "http://169.254.169.254/latest/api/token" \
+  -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" || true)
 
 if [ -n "$IMDS_TOKEN" ]; then
-  PRIVATE_IP=$(curl -s -f -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" http://169.254.169.254/latest/meta-data/local-ipv4 || hostname -I | awk '{print $1}')
+  PRIVATE_IP=$(curl -s -f \
+    -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" \
+    http://169.254.169.254/latest/meta-data/local-ipv4 \
+    || hostname -I | awk '{print $1}')
 else
   PRIVATE_IP=$(hostname -I | awk '{print $1}')
 fi
 
-# Fetch encrypted secrets from AWS SSM Parameter Store dynamically
+# Fetch encrypted secrets from AWS SSM Parameter Store
+# NOTE: ${aws_region} and ${environment} below ARE Terraform template variables (no escaping needed)
 AWS_REGION="${aws_region}"
 ENV_NAME="${environment}"
 
-POSTGRES_PASS=$(aws ssm get-parameter --name "/absolute/$ENV_NAME/postgres_password" --with-decryption --region $AWS_REGION --query "Parameter.Value" --output text)
-POSTGRES_HOST=$(aws ssm get-parameter --name "/absolute/$ENV_NAME/postgres_host" --region $AWS_REGION --query "Parameter.Value" --output text)
-SECRET_KEY=$(aws ssm get-parameter --name "/absolute/$ENV_NAME/secret_key_base" --with-decryption --region $AWS_REGION --query "Parameter.Value" --output text)
-COOKIE=$(aws ssm get-parameter --name "/absolute/$ENV_NAME/beam_cookie" --with-decryption --region $AWS_REGION --query "Parameter.Value" --output text)
+echo "Fetching secrets from SSM..."
+POSTGRES_PASS=$(fetch_ssm "/absolute/$ENV_NAME/postgres_password" "true")
+POSTGRES_HOST=$(fetch_ssm "/absolute/$ENV_NAME/postgres_host" "false")
+SECRET_KEY=$(fetch_ssm "/absolute/$ENV_NAME/secret_key_base" "true")
+COOKIE=$(fetch_ssm "/absolute/$ENV_NAME/beam_cookie" "true")
+echo "All SSM secrets fetched successfully."
 
 # Login to ECR
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
-aws ecr get-login-password --region $AWS_REGION | sudo docker login --username AWS --password-stdin $ECR_REGISTRY
+aws ecr get-login-password --region "$AWS_REGION" | \
+  sudo docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
 # Pull the specific image tag managed by Terraform
+# NOTE: ${image_tag} IS a Terraform template variable
 IMAGE_URI="$ECR_REGISTRY/absolute-$ENV_NAME:${image_tag}"
-sudo docker pull $IMAGE_URI
+echo "Pulling image: $IMAGE_URI"
+sudo docker pull "$IMAGE_URI"
 
-# Stop existing container if any (useful if script is re-run)
+# Stop existing container if any (useful if script is re-run on instance refresh)
 sudo docker stop absolute_app || true
 sudo docker rm absolute_app || true
 
 # Run database migrations before starting the app
+echo "Running database migrations..."
 sudo docker run --rm \
   -e DATABASE_URL="ecto://postgres:$POSTGRES_PASS@$POSTGRES_HOST:5432/absolute_prod" \
   -e SECRET_KEY_BASE="$SECRET_KEY" \
-  $IMAGE_URI /app/bin/migrate
+  "$IMAGE_URI" /app/bin/migrate
+
+echo "Migrations complete. Starting application..."
 
 # Start the application
+# PHX_HOST is set to the instance's private IP.
+# The ALB handles public traffic — Phoenix uses PHX_HOST for LiveView WebSocket URL generation.
 sudo docker run -d --name absolute_app --restart always --net host \
   -e PORT=4000 \
-  -e PHX_HOST="0.0.0.0" \
+  -e PHX_HOST="$PRIVATE_IP" \
   -e DATABASE_URL="ecto://postgres:$POSTGRES_PASS@$POSTGRES_HOST:5432/absolute_prod" \
   -e SECRET_KEY_BASE="$SECRET_KEY" \
   -e RELEASE_NODE="absolute@$PRIVATE_IP" \
   -e RELEASE_COOKIE="$COOKIE" \
   -e PHX_SERVER="true" \
-  $IMAGE_URI
+  "$IMAGE_URI"
+
+echo "Application started successfully on $PRIVATE_IP:4000"

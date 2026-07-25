@@ -1,6 +1,7 @@
 services:
   postgres:
-    image: postgres:18
+    # FIX: postgres:18 does not exist on Docker Hub. Using postgres:17 (latest stable).
+    image: postgres:17
     container_name: absolute-postgres
     restart: unless-stopped
 

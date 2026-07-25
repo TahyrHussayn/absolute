@@ -77,7 +77,7 @@ RUN mix release
 FROM ${RUNNER_IMAGE} AS final
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates \
+  && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates tini curl \
   && rm -rf /var/lib/apt/lists/*
 
 # Set the locale
@@ -99,9 +99,10 @@ COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/absolute ./
 
 USER nobody
 
-# If using an environment that doesn't automatically reap zombie processes, it is
-# advised to add an init process such as tini via `apt-get install`
-# above and adding an entrypoint. See https://github.com/krallin/tini for details
-# ENTRYPOINT ["/tini", "--"]
+# Use tini as the init process to reap zombie processes
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD curl -f http://localhost:4000/api/health || exit 1
 
 CMD ["/app/bin/server"]

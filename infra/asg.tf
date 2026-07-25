@@ -3,6 +3,7 @@ resource "aws_launch_template" "beam_lt" {
   image_id      = data.aws_ami.ubuntu.id
   instance_type = var.instance_type
   key_name      = var.key_name != "" ? var.key_name : null
+  update_default_version = true
 
   iam_instance_profile {
     name = aws_iam_instance_profile.ec2_profile.name
@@ -46,8 +47,10 @@ resource "aws_autoscaling_group" "beam_asg" {
   max_size            = var.node_count * 2
   desired_capacity    = var.node_count
 
-  health_check_type         = "ELB"
-  health_check_grace_period = 300
+  health_check_type = "ELB"
+  # Increased from 300s to 600s — EC2 nodes need time to:
+  # install Docker, authenticate to ECR, pull the image, run DB migrations, and start the app.
+  health_check_grace_period = 600
 
   target_group_arns = [aws_lb_target_group.absolute_tg.arn]
 
@@ -60,6 +63,8 @@ resource "aws_autoscaling_group" "beam_asg" {
     strategy = "Rolling"
     preferences {
       min_healthy_percentage = 50
+      # Wait for new instances to pass ALB health checks before proceeding with the rolling update
+      instance_warmup = 600
     }
   }
 

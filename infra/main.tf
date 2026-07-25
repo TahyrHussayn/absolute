@@ -6,11 +6,23 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
   }
 }
 
 provider "aws" {
   region = var.aws_region
+
+  default_tags {
+    tags = {
+      Project     = "Absolute"
+      Environment = var.environment
+      ManagedBy   = "Terraform"
+    }
+  }
 }
 
 # Lookup default VPC & Subnets for easy zero-friction deployment
@@ -154,5 +166,3 @@ resource "aws_iam_instance_profile" "ec2_profile" {
   name = "absolute-ec2-instance-profile-${var.environment}"
   role = aws_iam_role.ec2_ssm_role.name
 }
-
-

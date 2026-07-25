@@ -87,8 +87,3 @@ resource "aws_lb_listener" "http_listener" {
     target_group_arn = aws_lb_target_group.absolute_tg.arn
   }
 }
-
-output "alb_dns_name" {
-  description = "The DNS name of the ALB"
-  value       = aws_lb.absolute_alb.dns_name
-}
