@@ -59,7 +59,7 @@ defmodule Absolute.TickerAgentTest do
       assert after_inc["blue"] == before["blue"] + 1
     end
 
-    test "incrementing \"red\" does not affect \"green\" or \"blue\"" do
+    test ~s(incrementing "red" does not affect "green" or "blue") do
       before = TickerAgent.get_counts()
       TickerAgent.increment("red")
       after_inc = TickerAgent.get_counts()
@@ -68,7 +68,7 @@ defmodule Absolute.TickerAgentTest do
       assert after_inc["blue"] == before["blue"]
     end
 
-    test "incrementing \"green\" does not affect \"red\" or \"blue\"" do
+    test ~s(incrementing "green" does not affect "red" or "blue") do
       before = TickerAgent.get_counts()
       TickerAgent.increment("green")
       after_inc = TickerAgent.get_counts()
@@ -77,7 +77,7 @@ defmodule Absolute.TickerAgentTest do
       assert after_inc["blue"] == before["blue"]
     end
 
-    test "incrementing \"blue\" does not affect \"red\" or \"green\"" do
+    test ~s(incrementing "blue" does not affect "red" or "green") do
       before = TickerAgent.get_counts()
       TickerAgent.increment("blue")
       after_inc = TickerAgent.get_counts()

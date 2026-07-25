@@ -51,7 +51,7 @@ resource "aws_db_instance" "postgres" {
   publicly_accessible          = false
   storage_encrypted            = true
   performance_insights_enabled = true
-  
+
   backup_retention_period         = 7
   backup_window                   = "03:00-04:00"
   maintenance_window              = "sun:04:00-sun:05:00"
@@ -59,7 +59,7 @@ resource "aws_db_instance" "postgres" {
   deletion_protection             = false
 
   lifecycle {
-    ignore_changes  = [password]
+    ignore_changes = [password]
   }
 
   tags = {

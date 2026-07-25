@@ -1,8 +1,8 @@
 resource "aws_launch_template" "beam_lt" {
-  name_prefix   = "absolute-beam-lt-${var.environment}"
-  image_id      = data.aws_ami.ubuntu.id
-  instance_type = var.instance_type
-  key_name      = var.key_name != "" ? var.key_name : null
+  name_prefix            = "absolute-beam-lt-${var.environment}"
+  image_id               = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_type
+  key_name               = var.key_name != "" ? var.key_name : null
   update_default_version = true
 
   iam_instance_profile {
