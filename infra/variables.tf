@@ -37,7 +37,7 @@ variable "repo_url" {
 variable "github_repo" {
   description = "GitHub Repository string (owner/repo) for OIDC identity federation"
   type        = string
-  default     = "tahyrhussayn/absolute"
+  default     = "TahyrHussayn/absolute"
 }
 
 variable "image_tag" {
